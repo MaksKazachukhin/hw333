@@ -1,5 +1,6 @@
-package kg.geeks.hw33
+package kg.geeks.hw33.ui.activity
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -11,7 +12,13 @@ import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.*
 import androidx.navigation.navArgument
+import kg.geeks.hw33.nav.BottomNavigationBar
 import kg.geeks.hw33.ui.*
+import kg.geeks.hw33.ui.screen.character.CharacterViewModel
+import kg.geeks.hw33.ui.screen.character.detail.CharacterDetailScreen
+import kg.geeks.hw33.ui.screen.character.CharactersScreen
+import kg.geeks.hw33.ui.screen.location.LocationScreen
+import org.koin.androidx.compose.koinViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -22,10 +29,13 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@SuppressLint("StateFlowValueCalledInComposition")
 @Composable
 fun MyComposeApp() {
     val navController = rememberNavController()
     val currentRoute = getCurrentRoute(navController)
+
+    val characterViewModel: CharacterViewModel = koinViewModel()
 
     Scaffold(
         bottomBar = {
@@ -41,20 +51,26 @@ fun MyComposeApp() {
             modifier = Modifier.padding(paddingValues)
         ) {
             composable("characters") {
-                CharactersScreen(navController)
+                CharactersScreen(
+                    onNavigateToDetail = { characterId ->
+                        navController.navigate("characterDetail/$characterId")
+                    },
+                    viewModel = characterViewModel
+                )
             }
 
             composable("locations") {
                 LocationScreen(navController)
             }
-            composable(
-                "characterDetail/{characterId}",
-                arguments = listOf(navArgument("characterId") { type = NavType.StringType })
-            ) { backStackEntry ->
-                val characterId = backStackEntry.arguments?.getString("characterId")
-                val character = mockCharacters.find { it.id == characterId }
+            composable("characterDetail/{characterId}") { backStackEntry ->
+                val characterId = backStackEntry.arguments?.getString("characterId")?.toInt() ?: 0
+                val character =
+                    characterViewModel.character.value.firstOrNull() { it.id == characterId }
                 if (character != null) {
-                    CharacterDetailScreen(navController, character)
+                    CharacterDetailScreen(
+                        character = character,
+                       onBackClick = {navController.popBackStack()}
+                    )
                 } else {
                     Text("Персонаж не найден")
                 }

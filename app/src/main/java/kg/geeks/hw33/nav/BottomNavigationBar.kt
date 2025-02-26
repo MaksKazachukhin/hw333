@@ -1,4 +1,4 @@
-package kg.geeks.hw33.ui
+package kg.geeks.hw33.nav
 
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
